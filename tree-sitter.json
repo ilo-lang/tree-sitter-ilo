@@ -1,0 +1,35 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "ilo",
+      "camelcase": "Ilo",
+      "scope": "source.ilo",
+      "path": ".",
+      "file-types": ["ilo"],
+      "highlights": ["queries/highlights.scm"],
+      "injections": ["queries/injections.scm"],
+      "locals": ["queries/locals.scm"]
+    }
+  ],
+  "metadata": {
+    "version": "0.12.0",
+    "license": "MIT",
+    "description": "ilo grammar for tree-sitter",
+    "authors": [
+      { "name": "Dan Morris" }
+    ],
+    "links": {
+      "repository": "https://github.com/ilo-lang/ilo-tree-sitter",
+      "homepage": "https://ilo-lang.ai"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": false,
+    "node": true,
+    "python": false,
+    "rust": true,
+    "swift": false
+  }
+}
