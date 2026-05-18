@@ -1,0 +1,145 @@
+==================
+Foreach loop
+==================
+
+sum xs:L n>n;s=0;@x xs{s=+s x};s
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter
+      name: (identifier)
+      type: (param_type_expr (list_param_type (param_type_expr (primitive_type)))))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (assignment name: (identifier) value: (expression (number))))
+      (statement
+        (foreach_loop
+          var: (identifier)
+          iterable: (iter_target (identifier))
+          (brace_block
+            (body
+              (statement (assignment name: (identifier) value: (expression (sigil) (identifier) (identifier))))))))
+      (statement (expression (identifier))))))
+
+==================
+Range loop
+==================
+
+count>n;s=0;@i 0..5{s=+s i};s
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (assignment name: (identifier) value: (expression (number))))
+      (statement
+        (foreach_loop
+          var: (identifier)
+          iterable: (iter_target (number) (number))
+          (brace_block
+            (body
+              (statement (assignment name: (identifier) value: (expression (sigil) (identifier) (identifier))))))))
+      (statement (expression (identifier))))))
+
+==================
+While loop
+==================
+
+dec n:n>n;i=n;wh >i 0{i=- i 1};i
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (assignment name: (identifier) value: (expression (identifier))))
+      (statement
+        (while_loop
+          condition: (iter_target (identifier) (number))
+          (brace_block
+            (body
+              (statement (assignment name: (identifier) value: (expression (sigil) (identifier) (number))))))))
+      (statement (expression (identifier))))))
+
+==================
+Early return
+==================
+
+abs x:n>n;<x 0{ret -x};x
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression
+        (sigil) (identifier) (number)
+        (brace_block
+          (body
+            (statement (return_statement (expression (sigil) (identifier))))))))
+      (statement (expression (identifier))))))
+
+==================
+Match on Result
+==================
+
+show r:R n t>t;?r{~v:str v;^e:e}
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter
+      name: (identifier)
+      type: (param_type_expr
+        (result_param_type
+          (param_type_expr (primitive_type))
+          (param_type_expr (primitive_type)))))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression
+        (sigil) (identifier)
+        (brace_block
+          (body
+            (statement (expression
+              (sigil) (identifier) (sigil) (identifier) (identifier)))
+            (statement (expression
+              (sigil) (identifier) (sigil) (identifier))))))))))
+
+==================
+Bare-bool ternary
+==================
+
+pick h:b>n;?h{1}{0}
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression
+        (sigil) (identifier)
+        (brace_block (body (statement (expression (number)))))
+        (brace_block (body (statement (expression (number))))))))))

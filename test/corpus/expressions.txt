@@ -1,0 +1,154 @@
+==================
+Prefix arithmetic
+==================
+
+add>n;+1 2
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression (sigil) (number) (number))))))
+
+==================
+Nested prefix arithmetic
+==================
+
+mul-add a:n b:n c:n>n;+*a b c
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression (sigil) (sigil) (identifier) (identifier) (identifier))))))
+
+==================
+String literal with escape
+==================
+
+greet>t;"hello\nworld"
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression (string (escape_sequence)))))))
+
+==================
+List literal
+==================
+
+xs>L n;[1 2 3]
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr
+      (list_param_type (param_type_expr (primitive_type))))
+    body: (body
+      (statement (expression
+        (list_literal (expression (number) (number) (number))))))))
+
+==================
+Pipe operator
+==================
+
+work x:n>n;str x>>len
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression
+        (identifier) (identifier) (sigil) (identifier))))))
+
+==================
+Bang call (auto-unwrap)
+==================
+
+parse s:t>R n t;num! s
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr
+      (result_param_type
+        (param_type_expr (primitive_type))
+        (param_type_expr (primitive_type))))
+    body: (body
+      (statement (expression (identifier) (sigil) (identifier))))))
+
+==================
+Field access
+==================
+
+city u:user>t;u.addr.city
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (type_ref (type_ref_name))))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression
+        (field_access
+          (field_access (identifier) (field_name))
+          (field_name)))))))
+
+==================
+Inline lambda
+==================
+
+inc-all xs:L n>L n;map (x:n>n;+x 1) xs
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter
+      name: (identifier)
+      type: (param_type_expr (list_param_type (param_type_expr (primitive_type)))))
+    (return_arrow)
+    return_type: (param_type_expr (list_param_type (param_type_expr (primitive_type))))
+    body: (body
+      (statement (expression
+        (identifier)
+        (paren_group
+          (lambda
+            (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+            (return_arrow)
+            return_type: (param_type_expr (primitive_type))
+            body: (body
+              (statement (expression (sigil) (identifier) (number))))))
+        (identifier))))))
