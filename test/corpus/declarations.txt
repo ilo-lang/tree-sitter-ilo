@@ -1,0 +1,139 @@
+==================
+Simple function declaration
+==================
+
+add a:n b:n>n;+a b
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression (sigil) (identifier) (identifier))))))
+
+==================
+Function with list type
+==================
+
+len xs:L n>n;at xs 0
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter
+      name: (identifier)
+      type: (param_type_expr
+        (list_param_type
+          (param_type_expr (primitive_type)))))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression (identifier) (identifier) (number))))))
+
+==================
+Function returning Result
+==================
+
+parse s:t>R n t;num s
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr
+      (result_param_type
+        (param_type_expr (primitive_type))
+        (param_type_expr (primitive_type))))
+    body: (body
+      (statement (expression (identifier) (identifier))))))
+
+==================
+Zero-arg function
+==================
+
+main>n;42
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body (statement (expression (number))))))
+
+==================
+Record type declaration
+==================
+
+type point{x:n;y:n}
+
+---
+
+(source_file
+  (type_declaration
+    name: (identifier)
+    (record_field name: (identifier) type: (param_type_expr (primitive_type)))
+    (record_field name: (identifier) type: (param_type_expr (primitive_type)))))
+
+==================
+Sum type declaration
+==================
+
+type colour=S red green blue
+
+---
+
+(source_file
+  (type_declaration
+    name: (identifier)
+    (param_type_expr
+      (sum_keyword_type
+        (identifier)
+        (identifier)
+        (identifier)))))
+
+==================
+Use declaration
+==================
+
+use "helpers.ilo" [foo bar]
+
+---
+
+(source_file
+  (use_declaration
+    (string)
+    (identifier)
+    (identifier)))
+
+==================
+Tool declaration
+==================
+
+tool get-user "Retrieve user by ID" uid:t>R profile t timeout:5,retry:2
+
+---
+
+(source_file
+  (tool_declaration
+    name: (identifier)
+    description: (string)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr
+      (result_param_type
+        (param_type_expr (type_ref (type_ref_name)))
+        (param_type_expr (primitive_type))))
+    (tool_option (number))
+    (tool_option (number))))
