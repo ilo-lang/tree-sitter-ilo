@@ -143,3 +143,71 @@ pick h:b>n;?h{1}{0}
         (sigil) (identifier)
         (brace_block (body (statement (expression (number)))))
         (brace_block (body (statement (expression (number))))))))))
+
+==================
+Explicit discard statement
+==================
+
+main>n;_=mset m "k" 1;0
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement
+        (discard_assignment
+          value: (expression (identifier) (identifier) (string) (number))))
+      (statement (expression (number))))))
+
+==================
+Defer statement
+==================
+
+main>n;defer prnt "done";42
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (defer_statement (expression (identifier) (string))))
+      (statement (expression (number))))))
+
+==================
+Todo statement
+==================
+
+main>n;todo
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (todo_statement)))))
+
+==================
+Panic statement
+==================
+
+main>n;panic "not implemented"
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (panic_statement (expression (string)))))))

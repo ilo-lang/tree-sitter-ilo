@@ -152,3 +152,116 @@ inc-all xs:L n>L n;map (x:n>n;+x 1) xs
             body: (body
               (statement (expression (sigil) (identifier) (number))))))
         (identifier))))))
+
+==================
+Hex literal
+==================
+
+main>n;0xff
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body (statement (expression (number))))))
+
+==================
+Binary literal
+==================
+
+main>n;0b1010
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body (statement (expression (number))))))
+
+==================
+Octal literal
+==================
+
+main>n;0o777
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body (statement (expression (number))))))
+
+==================
+Use-chain operator
+==================
+
+main>t;x <- foo bar
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression (identifier) (sigil) (identifier) (identifier))))))
+
+==================
+Brace-lambda single-statement
+==================
+
+main>n;map {x> *x 2} xs
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression
+        (identifier)
+        (brace_lambda
+          (identifier)
+          (body (statement (expression (sigil) (identifier) (number)))))
+        (identifier))))))
+
+==================
+Brace-lambda multi-statement
+==================
+
+main>n;fld {a x> tmp=*x x; +a tmp} xs 0
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression
+        (identifier)
+        (brace_block
+          (body
+            (statement (expression
+              (identifier)
+              (identifier)
+              (sigil)
+              (identifier)
+              (sigil)
+              (sigil)
+              (identifier)
+              (identifier)))
+            (statement (expression (sigil) (identifier) (identifier)))))
+        (identifier)
+        (number))))))

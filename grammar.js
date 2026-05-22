@@ -29,6 +29,23 @@
  * an `expression` which is a flat token sequence. Queries in
  * `queries/highlights.scm` use anchor predicates on token kinds
  * (`identifier`, sigils, keywords) to colour the contents.
+ *
+ * Changelog (sync to 26.5)
+ * -------------------------
+ * ILO-404  Brace-lambda multi-stmt body: {params> stmts}
+ * ILO-409  `<-` use-chain operator added to sigils
+ * ILO-410  `todo` / `panic` expressions
+ * ILO-411  Match `|` alternatives: `"a"|"b":body`
+ * ILO-412  Multi-subject match: `?a b{…}`
+ * ILO-36   `_=expr` explicit discard statement
+ * ILO-62/402/403  Sum-type union literals `type Foo = A | B(n)`
+ *                  and generic sum types `type Result<a,b> = ok(a) | err(b)`
+ * ILO-61/386  Bounded/multi-bound generics: `fn<a:comparable>`
+ * ILO-396  Hex / bin / oct numeric literals (0x… 0b… 0o…)
+ * ILO-394  Native U32 / U64 / I64 type annotations
+ * ILO-398/399/400  `use re:` re-exports and `use alias:` named imports
+ * ILO-361  Effect-set annotations `[!net !read]` in type position
+ * ILO-56   `defer` / `errdefer` statements
  */
 
 module.exports = grammar({
@@ -67,6 +84,16 @@ module.exports = grammar({
     [$.parameter, $._token],
     [$.lambda, $.expression],
     [$.lambda, $._token],
+    [$.brace_lambda, $.brace_block],
+    [$.brace_lambda, $.expression],
+    [$.brace_lambda, $.sigil],
+    [$.brace_lambda, $._token],
+    [$.generic_params, $.expression],
+    [$.union_type_decl, $.type_declaration],
+    [$.discard_assignment, $.expression],
+    [$.discard_assignment, $.statement],
+    [$.union_variant, $.type_ref],
+    [$.union_type_decl, $.param_type_expr],
   ],
 
   rules: {
@@ -86,11 +113,19 @@ module.exports = grammar({
 
     // -------------------- declarations --------------------
 
+    // use "path"
+    // use "path" [name1 name2]
+    // use alias:"path"           -- named-module import (ILO-398)
+    // use re:"path" [name1 name2] -- re-export (ILO-399)
+    // use lazy:"path"             -- lazy loading (ILO-400)
     use_declaration: $ => prec.right(seq(
       'use',
+      optional($.use_prefix),
       $.string,
       optional(seq('[', repeat($.identifier), ']')),
     )),
+
+    use_prefix: $ => token(seq(/[a-z][a-z0-9]*(-[a-z0-9]+)*/, ':')),
 
     tool_declaration: $ => prec.right(seq(
       'tool',
@@ -109,14 +144,57 @@ module.exports = grammar({
       optional(','),
     )),
 
-    type_declaration: $ => prec.right(seq(
-      'type',
-      field('name', $.identifier),
-      choice(
-        seq('{', sepBy(';', $.record_field), '}'),
-        seq('=', $.param_type_expr),
+    // type Foo { x:n; y:n }           -- record
+    // type Foo = S red green blue      -- sum keyword alias
+    // type Foo = circle(n) | square(n) -- discriminated union (ILO-62)
+    // type Result<a,b> = ok(a) | err(b)-- generic union (ILO-402/403)
+    type_declaration: $ => prec.right(choice(
+      seq(
+        'type',
+        field('name', $.identifier),
+        optional($.generic_params),
+        '{', sepBy(';', $.record_field), '}',
+      ),
+      seq(
+        'type',
+        field('name', $.identifier),
+        optional($.generic_params),
+        '=',
+        $.union_type_decl,
+      ),
+      seq(
+        'type',
+        field('name', $.identifier),
+        optional($.generic_params),
+        '=',
+        $.param_type_expr,
       ),
     )),
+
+    // Discriminated union type declaration body (ILO-62)
+    // circle(n) | square(n) | point
+    union_type_decl: $ => prec.right(seq(
+      $.union_variant,
+      repeat(seq('|', $.union_variant)),
+    )),
+
+    union_variant: $ => prec.right(choice(
+      seq(field('tag', $.identifier), '(', $.param_type_expr, ')'),
+      field('tag', $.identifier),
+    )),
+
+    // Generic type parameters: <a b> or <a:bound b:bound> (ILO-61/386)
+    generic_params: $ => seq(
+      '<',
+      repeat1($.generic_param),
+      '>',
+    ),
+
+    generic_param: $ => seq(
+      $.identifier,
+      optional(seq(':', $.identifier)),
+      optional(','),
+    ),
 
     record_field: $ => seq(
       field('name', $.identifier),
@@ -124,8 +202,10 @@ module.exports = grammar({
       field('type', $.param_type_expr),
     ),
 
+    // fn<a:comparable> x:a y:a>a -- bounded generics (ILO-61/386)
     function_declaration: $ => prec.dynamic(100, prec.right(20, seq(
       field('name', $.identifier),
+      optional($.generic_params),
       repeat($.parameter),
       $.return_arrow,
       field('return_type', $.param_type_expr),
@@ -146,6 +226,7 @@ module.exports = grammar({
     // parameter's name.
     param_type_expr: $ => choice(
       $.primitive_type,
+      $.native_int_type,
       $.type_ref,
       $.parenthesised_type,
       $.list_param_type,
@@ -154,6 +235,7 @@ module.exports = grammar({
       $.result_param_type,
       $.fn_param_type,
       $.sum_keyword_type,
+      $.effect_type,
     ),
 
     list_param_type: $ => prec.right(seq('L', $.param_type_expr)),
@@ -162,6 +244,16 @@ module.exports = grammar({
     result_param_type: $ => prec.right(seq('R', $.param_type_expr, $.param_type_expr)),
     fn_param_type: $ => prec.right(seq('F', $.param_type_expr, $.param_type_expr)),
     sum_keyword_type: $ => prec.right(seq('S', repeat1($.identifier))),
+
+    // Native integer type annotations (ILO-394): U32, U64, I64
+    native_int_type: $ => choice('U32', 'U64', 'I64'),
+
+    // Effect-set type annotation (ILO-361): [!net !read] or [!write]
+    effect_type: $ => seq(
+      '[',
+      repeat1(seq('!', $.identifier)),
+      ']',
+    ),
 
     // `>` in declaration position is the return arrow. We use an
     // alias so highlight queries can colour it as a keyword
@@ -180,6 +272,7 @@ module.exports = grammar({
 
     _type_atom: $ => choice(
       $.primitive_type,
+      $.native_int_type,
       $.type_constructor,
       $.sum_keyword,
       $.function_keyword,
@@ -198,17 +291,29 @@ module.exports = grammar({
 
     statement: $ => choice(
       $.assignment,
+      $.discard_assignment,
       $.destructure_assignment,
       $.return_statement,
       $.break_statement,
       $.continue_statement,
       $.foreach_loop,
       $.while_loop,
+      $.defer_statement,
+      $.errdefer_statement,
+      $.todo_statement,
+      $.panic_statement,
       $.expression,
     ),
 
     assignment: $ => prec.right(4, seq(
       field('name', $.identifier),
+      '=',
+      field('value', $.expression),
+    )),
+
+    // _=expr explicit discard (ILO-36)
+    discard_assignment: $ => prec.right(4, seq(
+      '_',
       '=',
       field('value', $.expression),
     )),
@@ -224,6 +329,14 @@ module.exports = grammar({
     return_statement: $ => prec.right(seq('ret', optional($.expression))),
     break_statement: $ => prec.right(seq('brk', optional($.expression))),
     continue_statement: $ => 'cnt',
+
+    // defer / errdefer (ILO-56)
+    defer_statement: $ => prec.right(seq('defer', $.expression)),
+    errdefer_statement: $ => prec.right(seq('errdefer', $.expression)),
+
+    // todo / panic as statements (ILO-410)
+    todo_statement: $ => prec.right(seq('todo', optional($.expression))),
+    panic_statement: $ => prec.right(seq('panic', $.expression)),
 
     foreach_loop: $ => prec(5, seq(
       '@',
@@ -271,6 +384,7 @@ module.exports = grammar({
       $.wildcard,
       $.list_literal,
       $.brace_block,
+      $.brace_lambda,
       $.paren_group,
       $.sigil,
     ),
@@ -286,6 +400,7 @@ module.exports = grammar({
       '??', '>>',
       '?', '^', '~', '@',
       ',', ':', '..', '.',
+      '<-',
       'with',
     ),
 
@@ -313,6 +428,17 @@ module.exports = grammar({
       ')',
     ),
 
+    // Brace-lambda shorthand: {params> stmts} (ILO-404)
+    // {x > *x 2}  or  {a x > ; tmp=*x x; +a tmp}
+    brace_lambda: $ => seq(
+      '{',
+      repeat($.identifier),
+      '>',
+      optional(';'),
+      optional($.body),
+      '}',
+    ),
+
     list_literal: $ => seq('[', optional($.expression), ']'),
 
     brace_block: $ => seq('{', optional($.body), '}'),
@@ -333,7 +459,13 @@ module.exports = grammar({
       /./,
     )),
 
-    number: $ => /-?[0-9]+(\.[0-9]+)?/,
+    // Numbers: decimal, hex (0x…), binary (0b…), octal (0o…) (ILO-396)
+    number: $ => choice(
+      /-?[0-9]+(\.[0-9]+)?/,
+      /0x[0-9a-fA-F]+/,
+      /0b[01]+/,
+      /0o[0-7]+/,
+    ),
 
     boolean: $ => choice('true', 'false'),
 

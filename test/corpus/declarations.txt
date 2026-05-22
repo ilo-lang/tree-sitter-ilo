@@ -137,3 +137,96 @@ tool get-user "Retrieve user by ID" uid:t>R profile t timeout:5,retry:2
         (param_type_expr (primitive_type))))
     (tool_option (number))
     (tool_option (number))))
+
+==================
+Discriminated union type declaration
+==================
+
+type shape = circle(n) | square(n) | point
+
+---
+
+(source_file
+  (type_declaration
+    name: (identifier)
+    (union_type_decl
+      (union_variant tag: (identifier) (param_type_expr (primitive_type)))
+      (union_variant tag: (identifier) (param_type_expr (primitive_type)))
+      (union_variant tag: (identifier)))))
+
+==================
+Generic union type declaration
+==================
+
+type result = ok(n) | err(t)
+
+---
+
+(source_file
+  (type_declaration
+    name: (identifier)
+    (union_type_decl
+      (union_variant tag: (identifier) (param_type_expr (primitive_type)))
+      (union_variant tag: (identifier) (param_type_expr (primitive_type))))))
+
+==================
+Function with bounded generics
+==================
+
+gmn a:n b:n>n;+a b
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (parameter name: (identifier) type: (param_type_expr (primitive_type)))
+    (return_arrow)
+    return_type: (param_type_expr (primitive_type))
+    body: (body
+      (statement (expression (sigil) (identifier) (identifier))))))
+
+==================
+Use declaration with re-export prefix
+==================
+
+use re:"math-lib.ilo" [dbl half]
+
+---
+
+(source_file
+  (use_declaration
+    (use_prefix)
+    (string)
+    (identifier)
+    (identifier)))
+
+==================
+Use declaration with alias prefix
+==================
+
+use math:"./math-lib.ilo"
+
+---
+
+(source_file
+  (use_declaration
+    (use_prefix)
+    (string)))
+
+==================
+Native integer type annotation
+==================
+
+count n:U32>U64;n
+
+---
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    (parameter name: (identifier) type: (param_type_expr (native_int_type)))
+    (return_arrow)
+    return_type: (param_type_expr (native_int_type))
+    body: (body (statement (expression (identifier))))))
